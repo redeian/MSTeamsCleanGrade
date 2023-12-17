@@ -6,7 +6,8 @@ import pandas as pd
 
 
 def clean_file(file):
-    data = pd.read_excel(file)
+
+    data = pd.read_excel(file, skiprows=1)
 
     # Extracting student IDs from the email addresses
     data['ID'] = data['Email Address'].apply(lambda email: email.split('@')[0])
@@ -40,8 +41,6 @@ st.title("MS Teams Student Score and Grade Calculator")
 
 uploaded_file = st.file_uploader(
     "Choose a file", type=['xlsx'], accept_multiple_files=False)
-st.write("The excel file must be in the MS team format and delete the top first merge cell."
-         )
 
 
 if uploaded_file is not None:
@@ -71,22 +70,28 @@ if uploaded_file is not None:
         st.write("Weighted Scores:")
         st.dataframe(data)
 
-    # # User inputs for grade ranges
-    # st.write("Enter the grade ranges:")
-    # grades = ['A', 'B+', 'B', 'C+', 'C', 'D+', 'D', 'F']
-    # grade_ranges = {}
-    # for grade in grades:
-    #     grade_ranges[grade] = st.number_input(
-    #         f"Minimum score for {grade}:", 0, 100, 90 if grade == 'A' else 0)
+        # User inputs for grade ranges
+        st.write("Enter the grade ranges:")
+        grades = ['A', 'B+', 'B', 'C+', 'C', 'D+', 'D', 'F']
+        grade_ranges = {}
+        for grade in grades:
+            grade_ranges[grade] = st.number_input(
+                f"Minimum score for {grade}:", 0, 100, 85 - (grades.index(grade) * 5))
 
-    # # Assign grades
-    # if st.button("Assign Grades"):
-    #     def assign_grade(score):
-    #         for grade, min_score in grade_ranges.items():
-    #             if score >= min_score:
-    #                 return grade
-    #         return 'F'
+        def assign_grade(score):
+            for grade, min_score in grade_ranges.items():
+                if score >= min_score:
+                    return grade
+            return 'F'
 
-    #     data['Grade'] = data['Final Weighted Score'].apply(assign_grade)
-    #     st.write("Final Grades:")
-    #     st.dataframe(data)
+        data['Grade'] = data['Final Weighted Score'].apply(assign_grade)
+        st.write("Final Grades:")
+        st.dataframe(data)
+
+        # Download button
+        st.write("Download the final grades:")
+        st.write(data)
+        csv = data.to_csv(index=False)
+        b64 = base64.b64encode(csv.encode()).decode()
+        href = f'<a href="data:file/csv;base64,{b64}">Download CSV File</a>'
+        st.markdown(href, unsafe_allow_html=True)
